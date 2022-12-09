@@ -1,15 +1,18 @@
 package kr.ac.kumoh.s20181370.w1301volleywithrecyclerview
-
-import android.annotation.SuppressLint
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.toolbox.NetworkImageView
+
 import kr.ac.kumoh.s20181370.w1301volleywithrecyclerview.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -19,12 +22,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding= ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         model = ViewModelProvider(this)[SongViewModel::class.java]
+
         binding.list.apply {
-            layoutManager = LinearLayoutManager(applicationContext)//application
+            layoutManager = LinearLayoutManager(applicationContext)
             setHasFixedSize(true)
             itemAnimator = DefaultItemAnimator()
             adapter = songAdapter
@@ -39,28 +43,54 @@ class MainActivity : AppCompatActivity() {
             songAdapter.notifyItemRangeInserted(0,
                 model.list.value?.size ?: 0)
         }
+
         model.requestSong()
     }
-    inner class SongAdapter: RecyclerView.Adapter<SongAdapter.ViewHolder>(){
-        inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
-            val txTitle: TextView = itemView.findViewById(android.R.id.text1)
-            val txSinger : TextView = itemView.findViewById(android.R.id.text2)
-            //val txText = itemView.findViewById(android.R.id.text1)as TextView
-            //val txText = itemView.findViewById<TextView>(android.R.id.text1)
+
+    inner class SongAdapter: RecyclerView.Adapter<SongAdapter.ViewHolder>() {
+        inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView), OnClickListener {
+            //            val txTitle: TextView = itemView.findViewById(android.R.id.text1)
+//            val txSinger: TextView = itemView.findViewById(android.R.id.text2)
+            val txTitle: TextView = itemView.findViewById(R.id.text1)
+            val txSinger: TextView = itemView.findViewById(R.id.text2)
+
+            val niImage: NetworkImageView = itemView.findViewById<NetworkImageView>(R.id.image)
+
+            init {
+                niImage.setDefaultImageResId(android.R.drawable.ic_menu_report_image)
+                itemView.setOnClickListener(this)
+            }
+
+            override fun onClick(v: View?) {
+//                Toast.makeText(application,
+//                    model.list.value?.get(adapterPosition)?.title,
+//                    Toast.LENGTH_SHORT).show()
+                    val intent = Intent(application, SongActivity::class.java)
+                intent.putExtra(SongActivity.KEY_TITLE,
+                    model.list.value?.get(adapterPosition)?.title)
+                intent.putExtra(SongActivity.KEY_SINGER,
+                    model.list.value?.get(adapterPosition)?.singer)
+                intent.putExtra(SongActivity.KEY_IMAGE,
+                    model.getImageUrl(adapterPosition))
+                startActivity(intent)
+            }
         }
 
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int):ViewHolder {
-          val view = layoutInflater.inflate(android.R.layout.simple_list_item_2,parent,false)
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+            //val view = layoutInflater.inflate(android.R.layout.simple_list_item_2,
+            val view = layoutInflater.inflate(R.layout.item_song,
+                parent,
+                false)
             return ViewHolder(view)
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.txTitle.text = model.list.value?.get(position)?.title ?: null
-            holder.txSinger.text = model.list.value?.get(position)?.singer ?: null
+            holder.txTitle.text = model.list.value?.get(position)?.title
+            holder.txSinger.text = model.list.value?.get(position)?.singer
+
+            holder.niImage.setImageUrl(model.getImageUrl(position), model.imageLoader)
         }
 
         override fun getItemCount() = model.list.value?.size ?: 0
-
     }
 }
